@@ -3,19 +3,12 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-/// Default paths for local development. Override via CLI flags or environment variables.
-pub const DEFAULT_DOWNLOADS: &str = "/home/kyaustad/Downloads/Daz Downloads/";
-pub const DEFAULT_DIM_DOWNLOADS: &str =
-    "/home/kyaustad/.wine-daz/drive_c/users/Public/Documents/DAZ 3D/InstallManager/Downloads/";
-pub const DEFAULT_DAZ_LIBRARY: &str =
-    "/home/kyaustad/.wine-daz/drive_c/users/Public/Documents/My DAZ 3D Library/";
-
-pub const DEMO_FILE_1_PATH: &str =
-    "/home/kyaustad/Downloads/Daz Downloads/A3S Comfort Bed.rar";
-pub const DEMO_FILE_2_PATH: &str =
-    "/home/kyaustad/Downloads/Daz Downloads/10 My Ass Poses 2 for G9 and G8F.rar";
-pub const DEMO_FILE_3_PATH: &str =
-    "/home/kyaustad/Downloads/Daz Downloads/X-Fashion Dark Punk Leather Set Genesis 9.rar";
+/// Demo archive file names resolved relative to the configured downloads directory.
+pub const DEMO_FILE_NAMES: &[&str] = &[
+    "A3S Comfort Bed.rar",
+    "10 My Ass Poses 2 for G9 and G8F.rar",
+    "X-Fashion Dark Punk Leather Set Genesis 9.rar",
+];
 
 /// Top-level folders that appear in a DAZ 3D content library.
 pub const LIBRARY_FOLDERS: &[&str] = &[
@@ -114,17 +107,17 @@ impl AppConfig {
         let downloads_dir = resolve_path(
             downloads_dir,
             env::var("DAZ_SAILOR_DOWNLOADS").ok(),
-            DEFAULT_DOWNLOADS,
+            "DAZ_SAILOR_DOWNLOADS",
         )?;
         let dim_downloads_dir = resolve_path(
             dim_downloads_dir,
             env::var("DAZ_SAILOR_DIM").ok(),
-            DEFAULT_DIM_DOWNLOADS,
+            "DAZ_SAILOR_DIM",
         )?;
         let daz_library_dir = resolve_path(
             daz_library_dir,
             env::var("DAZ_SAILOR_LIBRARY").ok(),
-            DEFAULT_DAZ_LIBRARY,
+            "DAZ_SAILOR_LIBRARY",
         )?;
         let done_dir = match done_dir.or_else(|| env::var("DAZ_SAILOR_DONE").ok().map(PathBuf::from))
         {
@@ -178,15 +171,20 @@ impl AppConfig {
 fn resolve_path(
     cli: Option<PathBuf>,
     env_var: Option<String>,
-    default: &str,
+    name: &str,
 ) -> Result<PathBuf> {
     if let Some(path) = cli {
         return Ok(path);
     }
     if let Some(value) = env_var {
-        return Ok(PathBuf::from(value));
+        let trimmed = value.trim();
+        if !trimmed.is_empty() {
+            return Ok(PathBuf::from(trimmed));
+        }
     }
-    Ok(PathBuf::from(default))
+    bail!(
+        "{name} is not set; configure it in directories.env / .env or pass the matching CLI flag"
+    )
 }
 
 pub fn is_inside_done_dir(path: &Path, done_dir: &Path) -> bool {

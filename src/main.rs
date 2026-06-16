@@ -14,6 +14,13 @@ use config::AppConfig;
 use log::Logger;
 use processor::{batch_had_failures, process_demo_files, process_downloads_dir, process_single_archive};
 
+/// Load `.env` when present; otherwise fall back to `directories.env` at the project root.
+fn load_env() {
+    if dotenvy::dotenv().is_err() {
+        let _ = dotenvy::from_filename("directories.env");
+    }
+}
+
 #[derive(Debug, Clone, ValueEnum)]
 enum Mode {
     /// Process a single archive file.
@@ -28,7 +35,7 @@ enum Mode {
 #[command(
     name = "daz-sailor",
     about = "Route DAZ Studio downloads to Install Manager or the content library",
-    after_help = "Environment variables (override defaults when CLI flags are not set):\n  \
+    after_help = "Environment variables (set in .env or directories.env, or override via CLI):\n  \
                   DAZ_SAILOR_DOWNLOADS   Downloads folder to scan\n  \
                   DAZ_SAILOR_DIM         DAZ Install Manager downloads folder\n  \
                   DAZ_SAILOR_LIBRARY     DAZ content library folder\n  \
@@ -72,6 +79,7 @@ struct Cli {
 }
 
 fn main() -> Result<()> {
+    load_env();
     let cli = Cli::parse();
     let config = AppConfig::from_cli(
         cli.downloads_dir,

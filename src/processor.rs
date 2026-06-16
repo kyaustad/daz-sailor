@@ -133,11 +133,10 @@ pub fn process_single_archive(
 }
 
 pub fn process_demo_files(config: &AppConfig, log: &Logger) -> BatchSummary {
-    let demos = [
-        crate::config::DEMO_FILE_1_PATH,
-        crate::config::DEMO_FILE_2_PATH,
-        crate::config::DEMO_FILE_3_PATH,
-    ];
+    let demos: Vec<PathBuf> = crate::config::DEMO_FILE_NAMES
+        .iter()
+        .map(|name| config.downloads_dir.join(name))
+        .collect();
 
     if config.dry_run {
         log.warn("dry-run mode: no files will be written or moved");
@@ -146,16 +145,15 @@ pub fn process_demo_files(config: &AppConfig, log: &Logger) -> BatchSummary {
     let mut summary = BatchSummary::default();
     let total = demos.len();
 
-    for (index, demo) in demos.iter().enumerate() {
-        let path = PathBuf::from(demo);
+    for (index, path) in demos.iter().enumerate() {
         log.progress(index + 1, total, &format!("demo {}", path.display()));
 
-        match process_single_archive(&path, config, log) {
-            Ok(result) => summary.processed.push((path, result)),
+        match process_single_archive(path, config, log) {
+            Ok(result) => summary.processed.push((path.clone(), result)),
             Err(error) => {
                 let message = format!("{error:#}");
                 log.error(&message);
-                summary.failed.push((path, message));
+                summary.failed.push((path.clone(), message));
             }
         }
     }
@@ -241,13 +239,22 @@ fn move_to_done(archive_path: &Path, done_dir: &Path, log: &Logger) -> Result<Pa
         archive_path.display(),
         dest.display()
     ));
-    fs::rename(archive_path, &dest).with_context(|| {
-        format!(
-            "failed to move {} to {}",
-            archive_path.display(),
-            dest.display()
-        )
-    })?;
+    if let Err(error) = fs::rename(archive_path, &dest) {
+        fs::copy(archive_path, &dest).with_context(|| {
+            format!(
+                "failed to move or copy {} to {}: {error:#}",
+                archive_path.display(),
+                dest.display()
+            )
+        })?;
+        fs::remove_file(archive_path).with_context(|| {
+            format!(
+                "copied to {} but failed to remove source {}",
+                dest.display(),
+                archive_path.display()
+            )
+        })?;
+    }
     log.success(&format!("archived to {}", dest.display()));
 
     Ok(dest)

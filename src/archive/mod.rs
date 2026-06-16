@@ -1,4 +1,5 @@
-mod external;
+mod rar_archive;
+mod sevenz_archive;
 mod zip_archive;
 
 use std::path::Path;
@@ -42,20 +43,18 @@ pub fn open_archive(path: &Path) -> Result<Box<dyn ArchiveReader>> {
 
     match format {
         ArchiveFormat::Zip => Ok(Box::new(ZipReader::open(path)?)),
-        ArchiveFormat::Rar => Ok(Box::new(external::ExternalArchiveReader::rar(path)?)),
-        ArchiveFormat::SevenZ => Ok(Box::new(external::ExternalArchiveReader::seven_z(path)?)),
+        ArchiveFormat::Rar => Ok(Box::new(rar_archive::RarReader::open(path)?)),
+        ArchiveFormat::SevenZ => Ok(Box::new(sevenz_archive::SevenZReader::open(path)?)),
     }
 }
 
 pub fn open_archive_from_bytes(data: &[u8], name: &str) -> Result<Box<dyn ArchiveReader>> {
     match ArchiveFormat::from_path(Path::new(name)) {
         Some(ArchiveFormat::Zip) => Ok(Box::new(ZipBytesReader::new(data.to_vec()))),
-        Some(ArchiveFormat::Rar) => Ok(Box::new(
-            external::TempArchiveReader::rar_from_bytes(data)?,
-        )),
-        Some(ArchiveFormat::SevenZ) => Ok(Box::new(
-            external::TempArchiveReader::seven_z_from_bytes(data)?,
-        )),
+        Some(ArchiveFormat::Rar) => Ok(Box::new(rar_archive::TempRarReader::from_bytes(data)?)),
+        Some(ArchiveFormat::SevenZ) => {
+            Ok(Box::new(sevenz_archive::TempSevenZReader::from_bytes(data)?))
+        }
         None => bail!("unsupported nested archive type: {name}"),
     }
 }

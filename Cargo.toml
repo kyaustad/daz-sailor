@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.98"
 clap = { version = "4.5.40", features = ["derive", "env"] }
+dotenvy = "0.15.7"
+sevenz-rust2 = "0.21"
 tempfile = "3.20.0"
-walkdir = "2.5.0"
+unrar-ng = "0.7"
 zip = "8.6.0"
