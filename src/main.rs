@@ -14,10 +14,21 @@ use config::AppConfig;
 use log::Logger;
 use processor::{batch_had_failures, process_demo_files, process_downloads_dir, process_single_archive};
 
-/// Load `.env` when present; otherwise fall back to `directories.env` at the project root.
+/// Load `.env` or `directories.env` from the working directory or project root.
 fn load_env() {
-    if dotenvy::dotenv().is_err() {
-        let _ = dotenvy::from_filename("directories.env");
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let search_roots = [PathBuf::from("."), manifest_dir];
+
+    for root in search_roots {
+        let dot_env = root.join(".env");
+        if dot_env.is_file() && dotenvy::from_path(&dot_env).is_ok() {
+            return;
+        }
+
+        let directories_env = root.join("directories.env");
+        if directories_env.is_file() && dotenvy::from_path(&directories_env).is_ok() {
+            return;
+        }
     }
 }
 

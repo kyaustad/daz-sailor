@@ -3,7 +3,7 @@ use std::io::{Cursor, Write};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use sevenz_rust2::{ArchiveReader, Password};
+use sevenz_rust2::{ArchiveReader as SevenZArchiveReader, Password};
 
 use super::{ArchiveEntry, ArchiveReader};
 
@@ -57,13 +57,13 @@ impl ArchiveReader for TempSevenZReader {
 
 impl ArchiveReader for SevenZReader {
     fn list_entries(&self) -> Result<Vec<ArchiveEntry>> {
-        let reader = ArchiveReader::open(&self.path, Password::empty())
+        let reader = SevenZArchiveReader::open(&self.path, Password::empty())
             .with_context(|| format!("failed to open 7z archive {}", self.path.display()))?;
         Ok(entries_from_reader(&reader))
     }
 
     fn read_file(&self, name: &str) -> Result<Vec<u8>> {
-        let mut reader = ArchiveReader::open(&self.path, Password::empty())
+        let mut reader = SevenZArchiveReader::open(&self.path, Password::empty())
             .with_context(|| format!("failed to open 7z archive {}", self.path.display()))?;
         reader
             .read_file(name)
@@ -83,7 +83,9 @@ impl ArchiveReader for SevenZReader {
     }
 }
 
-fn entries_from_reader(reader: &ArchiveReader<impl std::io::Read + std::io::Seek>) -> Vec<ArchiveEntry> {
+fn entries_from_reader(
+    reader: &SevenZArchiveReader<impl std::io::Read + std::io::Seek>,
+) -> Vec<ArchiveEntry> {
     reader
         .archive()
         .files
@@ -98,13 +100,13 @@ fn entries_from_reader(reader: &ArchiveReader<impl std::io::Read + std::io::Seek
 }
 
 fn list_7z_entries<R: std::io::Read + std::io::Seek>(source: R) -> Result<Vec<ArchiveEntry>> {
-    let reader = ArchiveReader::new(source, Password::empty())
+    let reader = SevenZArchiveReader::new(source, Password::empty())
         .context("failed to parse 7z archive")?;
     Ok(entries_from_reader(&reader))
 }
 
 fn read_7z_file<R: std::io::Read + std::io::Seek>(source: R, name: &str) -> Result<Vec<u8>> {
-    let mut reader = ArchiveReader::new(source, Password::empty())
+    let mut reader = SevenZArchiveReader::new(source, Password::empty())
         .context("failed to parse 7z archive")?;
     reader
         .read_file(name)

@@ -60,17 +60,19 @@ Edit `directories.env` at the project root. Set the three paths for your machine
 Example (Windows):
 
 ```env
-DAZ_SAILOR_DOWNLOADS=C:\Users\You\Daz Downloads
-DAZ_SAILOR_DIM=C:\Users\Public\Documents\DAZ 3D\InstallManager\Downloads
-DAZ_SAILOR_LIBRARY=C:\Users\Public\Documents\My DAZ 3D Library
+DAZ_SAILOR_DOWNLOADS="C:/Users/You/Daz Downloads"
+DAZ_SAILOR_DIM="C:/Users/Public/Documents/DAZ 3D/InstallManager/Downloads"
+DAZ_SAILOR_LIBRARY="C:/Users/Public/Documents/My DAZ 3D Library"
 ```
+
+Use forward slashes in Windows paths (they work the same as backslashes). Paths with spaces must be wrapped in double quotes.
 
 Example (Linux with Wine):
 
 ```env
-DAZ_SAILOR_DOWNLOADS=/home/you/Downloads/Daz Downloads
-DAZ_SAILOR_DIM=/home/you/.wine/drive_c/users/Public/Documents/DAZ 3D/InstallManager/Downloads
-DAZ_SAILOR_LIBRARY=/home/you/.wine/drive_c/users/Public/Documents/My DAZ 3D Library
+DAZ_SAILOR_DOWNLOADS="/home/you/Downloads/Daz Downloads"
+DAZ_SAILOR_DIM="/home/you/.wine/drive_c/users/Public/Documents/DAZ 3D/InstallManager/Downloads"
+DAZ_SAILOR_LIBRARY="/home/you/.wine/drive_c/users/Public/Documents/My DAZ 3D Library"
 ```
 
 ### 3. Generate `.env`

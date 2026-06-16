@@ -13,9 +13,24 @@ $header = @"
 
 "@
 
-$content = Get-Content -Raw $source
-$content = $content -replace '(?m)^#.*\r?\n', ''
-$trimmed = $content.Trim()
+function Normalize-EnvPath([string]$value) {
+    return $value.Trim().Trim('"').Replace('\', '/')
+}
 
-Set-Content -Path $dest -Value ($header + $trimmed + "`n") -NoNewline
+$lines = Get-Content $source | ForEach-Object {
+    $line = $_.TrimEnd()
+    if ($line -match '^\s*#' -or $line -match '^\s*$') {
+        return
+    }
+    if ($line -match '^\s*([^=]+)=(.*)$') {
+        $key = $matches[1].Trim()
+        $value = Normalize-EnvPath $matches[2]
+        return "${key}=`"$value`""
+    }
+}
+
+$body = ($lines | Where-Object { $_ }) -join "`n"
+$content = $header + $body + "`n"
+
+[System.IO.File]::WriteAllText($dest, $content, [System.Text.UTF8Encoding]::new($false))
 Write-Host "Wrote $dest from directories.env"

@@ -102,25 +102,25 @@ fn read_rar_file(path: &Path, name: &str) -> Result<Vec<u8>> {
         .with_context(|| format!("failed to open RAR archive {}", path.display()))?;
 
     loop {
-        let Some(archive) = archive
+        let Some(file_archive) = archive
             .read_header()
             .with_context(|| format!("failed to read RAR header in {}", path.display()))?
         else {
             bail!("RAR entry not found: {name}");
         };
 
-        let entry_name = normalize_entry_name(&archive.entry().filename);
+        let entry_name = normalize_entry_name(&file_archive.entry().filename);
         if entry_name == name {
-            if archive.entry().is_directory() {
+            if file_archive.entry().is_directory() {
                 bail!("RAR entry is a directory: {name}");
             }
-            let (data, _) = archive
+            let (data, _) = file_archive
                 .read()
                 .with_context(|| format!("failed to read RAR entry {name}"))?;
             return Ok(data);
         }
 
-        archive = archive
+        archive = file_archive
             .skip()
             .with_context(|| format!("failed to skip RAR entry while searching for {name}"))?;
     }
